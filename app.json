@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/android/mipmap-xxxhdpi/mplaner.png",
     "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/android/mipmap-xxxhdpi/mplaner.png",
       "resizeMode": "contain",
@@ -17,6 +18,7 @@
     },
     "android": {
       "package": "com.mplaner.app",
+      "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
         "foregroundImage": "./assets/android/mipmap-xxxhdpi/mplaner.png",
         "backgroundColor": "#04070a"
@@ -32,7 +34,11 @@
           "icon": "./assets/android/mipmap-xxxhdpi/mplaner.png",
           "color": "#2ECC71"
         }
-      ]
+      ],
+      "expo-font",
+      "expo-splash-screen",
+      "expo-asset",
+      "expo-mail-composer"
     ],
     "extra": {
       "eas": {
