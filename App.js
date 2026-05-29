@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -17,19 +17,18 @@ import WorkoutScreen from './src/screens/WorkoutScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import { COLORS } from './src/constants/theme';
 
-// Keep the splash screen visible while we fetch resources
-SplashScreen.preventAutoHideAsync();
+// Keep the splash screen visible while we load fonts
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const Tab = createBottomTabNavigator();
 
 function AppNavigator() {
-  const { isLoading, theme } = useApp();
-  const [appIsReady, setAppIsReady] = useState(false);
+  const { isLoading } = useApp();
+  const [fontsLoaded, setFontsLoaded] = useState(false);
 
   useEffect(() => {
-    async function prepare() {
+    async function loadFonts() {
       try {
-        // Pre-load fonts, make any API calls you need to do here
         await Font.loadAsync({
           ...Ionicons.font,
           ...MaterialCommunityIcons.font,
@@ -37,63 +36,59 @@ function AppNavigator() {
           ...FontAwesome.font,
         });
       } catch (e) {
-        console.warn(e);
+        console.warn("Font load error:", e);
       } finally {
-        // Tell the application to render
-        setAppIsReady(true);
+        setFontsLoaded(true);
       }
     }
-
-    prepare();
+    loadFonts();
   }, []);
 
-  const onLayoutRootView = useCallback(async () => {
-    if (appIsReady && !isLoading) {
-      // This tells the splash screen to hide immediately!
-      await SplashScreen.hideAsync();
+  // Use a targeted useEffect to hide the splash screen as soon as we have enough to show
+  useEffect(() => {
+    if (fontsLoaded && !isLoading) {
+      SplashScreen.hideAsync().catch(() => {});
     }
-  }, [appIsReady, isLoading]);
+  }, [fontsLoaded, isLoading]);
 
-  if (!appIsReady || isLoading) {
+  if (!fontsLoaded || isLoading) {
     return (
       <View style={[styles.loading, { backgroundColor: '#04070a' }]}>
         <Text style={styles.loadingTitle}>MPLANER</Text>
-        <Text style={styles.loadingSub}>INITIALIZING CORE ENGINE...</Text>
+        <Text style={styles.loadingSub}>LOADING ELITE ASSETS...</Text>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarStyle: styles.tabBar,
-          tabBarBackground: () => (
-            <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
-          ),
-          tabBarActiveTintColor: COLORS.primary,
-          tabBarInactiveTintColor: '#666',
-          tabBarShowLabel: true,
-          tabBarLabelStyle: styles.tabLabel,
-          tabBarIcon: ({ focused, color, size }) => {
-            let iconName;
-            if (route.name === 'Home') iconName = focused ? 'home' : 'home-outline';
-            else if (route.name === 'Meals') iconName = focused ? 'restaurant' : 'restaurant-outline';
-            else if (route.name === 'Workout') iconName = focused ? 'fitness' : 'fitness-outline';
-            else if (route.name === 'Progress') iconName = focused ? 'stats-chart' : 'stats-chart-outline';
-            else if (route.name === 'Settings') iconName = focused ? 'settings' : 'settings-outline';
-            return <Ionicons name={iconName} size={24} color={color} />;
-          },
-        })}
-      >
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Meals" component={MealPlanScreen} />
-        <Tab.Screen name="Workout" component={WorkoutScreen} />
-        <Tab.Screen name="Progress" component={WeightTrackerScreen} />
-        <Tab.Screen name="Settings" component={SettingsScreen} />
-      </Tab.Navigator>
-    </View>
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarStyle: styles.tabBar,
+        tabBarBackground: () => (
+          <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+        ),
+        tabBarActiveTintColor: COLORS.primary,
+        tabBarInactiveTintColor: '#666',
+        tabBarShowLabel: true,
+        tabBarLabelStyle: styles.tabLabel,
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
+          if (route.name === 'Home') iconName = focused ? 'home' : 'home-outline';
+          else if (route.name === 'Meals') iconName = focused ? 'restaurant' : 'restaurant-outline';
+          else if (route.name === 'Workout') iconName = focused ? 'fitness' : 'fitness-outline';
+          else if (route.name === 'Progress') iconName = focused ? 'stats-chart' : 'stats-chart-outline';
+          else if (route.name === 'Settings') iconName = focused ? 'settings' : 'settings-outline';
+          return <Ionicons name={iconName} size={24} color={color} />;
+        },
+      })}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Meals" component={MealPlanScreen} />
+      <Tab.Screen name="Workout" component={WorkoutScreen} />
+      <Tab.Screen name="Progress" component={WeightTrackerScreen} />
+      <Tab.Screen name="Settings" component={SettingsScreen} />
+    </Tab.Navigator>
   );
 }
 
