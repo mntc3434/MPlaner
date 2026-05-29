@@ -1,24 +1,43 @@
 {
   "expo": {
-    "name": "Meal_Planer",
-    "slug": "Meal_Planer",
+    "name": "MPlaner",
+    "slug": "mplaner",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/android/mipmap-xxxhdpi/mplaner.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/android/mipmap-xxxhdpi/mplaner.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#04070a"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mplaner.app"
     },
     "android": {
+      "package": "com.mplaner.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/android/mipmap-xxxhdpi/mplaner.png",
+        "backgroundColor": "#04070a"
       }
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android/mipmap-xxxhdpi/mplaner.png",
+          "color": "#2ECC71"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "7304993d-62a8-4e5b-bb07-6adb5c35594b"
+      }
     }
   }
 }
