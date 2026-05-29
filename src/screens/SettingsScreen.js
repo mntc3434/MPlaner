@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Switch, Alert, TextInput, KeyboardAvoidingView, Platform,
@@ -8,7 +8,7 @@ import { BlurView } from 'expo-blur';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
-import { requestNotificationPermissions, cancelAllNotifications } from '../utils/notifications';
+import { requestNotificationPermissions, cancelAllNotifications, scheduleAllReminders, areRemindersScheduled } from '../utils/notifications';
 
 function GlassCard({ children, style, theme }) {
   return (
@@ -23,7 +23,7 @@ function GlassCard({ children, style, theme }) {
 }
 
 export default function SettingsScreen() {
-  const { userProfile, theme, toggleTheme, themeMode, updateProfile } = useApp();
+  const { userProfile, theme, toggleTheme, themeMode, updateProfile, todaysMeals } = useApp();
   const [notifs, setNotifs] = useState(false);
 
   const [editState, setEditState] = useState({
@@ -32,7 +32,19 @@ export default function SettingsScreen() {
     startWeight: String(userProfile.startWeight),
     goalWeight: String(userProfile.goalWeight),
     calorieTarget: String(userProfile.calorieTarget),
+    workoutTime: userProfile.workoutTime || '17:00',
+    sleepTime: userProfile.sleepTime || '23:00',
+    hydrationStartTime: userProfile.hydrationStartTime || '08:00',
+    hydrationInterval: String(userProfile.hydrationInterval || '3'),
   });
+
+  useEffect(() => {
+    async function checkNotifs() {
+      const isScheduled = await areRemindersScheduled();
+      setNotifs(isScheduled);
+    }
+    checkNotifs();
+  }, []);
 
   const saveUpdates = () => {
     updateProfile({
@@ -41,6 +53,10 @@ export default function SettingsScreen() {
       startWeight: parseFloat(editState.startWeight) || userProfile.startWeight,
       goalWeight: parseFloat(editState.goalWeight) || userProfile.goalWeight,
       calorieTarget: parseInt(editState.calorieTarget) || userProfile.calorieTarget,
+      workoutTime: editState.workoutTime,
+      sleepTime: editState.sleepTime,
+      hydrationStartTime: editState.hydrationStartTime,
+      hydrationInterval: parseInt(editState.hydrationInterval) || 3,
     });
     Alert.alert('Profile Updated', 'Your changes have been saved to Minte Planer.');
   };
@@ -48,11 +64,17 @@ export default function SettingsScreen() {
   async function handleToggleNotifs(val) {
     if (val) {
       const granted = await requestNotificationPermissions();
-      if (granted) setNotifs(true);
-      else Alert.alert('Permission Denied', 'Please enable notifications in settings.');
+      if (granted) {
+        setNotifs(true);
+        await scheduleAllReminders(todaysMeals, userProfile);
+        Alert.alert('Notifications Enabled', 'All reminders (Meals, Gym, Sleep, Water) have been scheduled.');
+      } else {
+        Alert.alert('Permission Denied', 'Please enable notifications in settings.');
+      }
     } else {
       await cancelAllNotifications();
       setNotifs(false);
+      Alert.alert('Notifications Disabled', 'All scheduled reminders have been removed.');
     }
   }
 
@@ -101,7 +123,6 @@ export default function SettingsScreen() {
               theme={theme} 
             />
           </GlassCard>
-
           <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Weights & Goals</Text>
           <GlassCard theme={theme}>
             <EditableInput 
@@ -125,6 +146,38 @@ export default function SettingsScreen() {
               value={editState.calorieTarget} 
               keyboardType="number-pad" 
               onChange={(v) => setEditState(p => ({ ...p, calorieTarget: v }))} 
+              theme={theme} 
+            />
+          </GlassCard>
+
+          <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Schedule & Cycles</Text>
+          <GlassCard theme={theme}>
+            <EditableInput 
+              label="Workout Time" 
+              value={editState.workoutTime} 
+              onChange={(v) => setEditState(p => ({ ...p, workoutTime: v }))} 
+              theme={theme} 
+            />
+            <Divider theme={theme} />
+            <EditableInput 
+              label="Sleep Time" 
+              value={editState.sleepTime} 
+              onChange={(v) => setEditState(p => ({ ...p, sleepTime: v }))} 
+              theme={theme} 
+            />
+            <Divider theme={theme} />
+            <EditableInput 
+              label="Hydration Start" 
+              value={editState.hydrationStartTime} 
+              onChange={(v) => setEditState(p => ({ ...p, hydrationStartTime: v }))} 
+              theme={theme} 
+            />
+             <Divider theme={theme} />
+            <EditableInput 
+              label="Hydration Every (hrs)" 
+              value={editState.hydrationInterval} 
+              keyboardType="number-pad"
+              onChange={(v) => setEditState(p => ({ ...p, hydrationInterval: v }))} 
               theme={theme} 
             />
           </GlassCard>
@@ -179,7 +232,7 @@ function Divider({ theme }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { padding: SPACING.md },
+  scroll: { padding: SPACING.md, paddingBottom: 120 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.lg },
   title: { fontSize: 28, fontWeight: '900' },
   saveHeaderBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingVertical: 6, borderRadius: 12 },

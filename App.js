@@ -4,7 +4,14 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons, MaterialCommunityIcons, MaterialIcons, FontAwesome } from '@expo/vector-icons';
+import { 
+  Ionicons, 
+  MaterialCommunityIcons, 
+  MaterialIcons, 
+  FontAwesome,
+  FontAwesome5,
+  AntDesign 
+} from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
@@ -12,18 +19,35 @@ import * as SplashScreen from 'expo-splash-screen';
 import { AppProvider, useApp } from './src/context/AppContext';
 import HomeScreen from './src/screens/HomeScreen';
 import WeightTrackerScreen from './src/screens/WeightTrackerScreen';
+import GalleryScreen from './src/screens/GalleryScreen';
 import MealPlanScreen from './src/screens/MealPlanScreen';
 import WorkoutScreen from './src/screens/WorkoutScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import WaterTrackerScreen from './src/screens/WaterTrackerScreen';
+import WeeklyReportScreen from './src/screens/WeeklyReportScreen';
+import AchievementModal from './src/components/AchievementModal';
 import { COLORS } from './src/constants/theme';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 // Keep the splash screen visible while we load fonts
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+
+function ProgressStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="ProgressMain" component={WeightTrackerScreen} />
+      <Stack.Screen name="Gallery" component={GalleryScreen} />
+      <Stack.Screen name="Water" component={WaterTrackerScreen} />
+      <Stack.Screen name="WeeklyReport" component={WeeklyReportScreen} />
+    </Stack.Navigator>
+  );
+}
 
 function AppNavigator() {
-  const { isLoading } = useApp();
+  const { isLoading, achievement, setAchievement } = useApp();
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
   useEffect(() => {
@@ -34,9 +58,12 @@ function AppNavigator() {
           ...MaterialCommunityIcons.font,
           ...MaterialIcons.font,
           ...FontAwesome.font,
+          ...FontAwesome5.font,
+          ...AntDesign.font,
         });
+        console.log("Vector fonts loaded successfully.");
       } catch (e) {
-        console.warn("Font load error:", e);
+        console.warn("Font load error (Icons might be missing):", e);
       } finally {
         setFontsLoaded(true);
       }
@@ -61,6 +88,7 @@ function AppNavigator() {
   }
 
   return (
+    <>
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
@@ -86,9 +114,23 @@ function AppNavigator() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Meals" component={MealPlanScreen} />
       <Tab.Screen name="Workout" component={WorkoutScreen} />
-      <Tab.Screen name="Progress" component={WeightTrackerScreen} />
+      <Tab.Screen 
+        name="Progress" 
+        component={ProgressStack} 
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            navigation.navigate('Progress', { screen: 'ProgressMain' });
+          },
+        })}
+      />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
+    <AchievementModal 
+      visible={!!achievement} 
+      achievement={achievement} 
+      onClose={() => setAchievement(null)} 
+    />
+  </>
   );
 }
 

@@ -28,7 +28,7 @@ export default function HomeScreen({ navigation }) {
   const { 
     userProfile, weightGained, progressToGoal, logWeight, 
     caloriesEaten, todaysMeals, todaysWorkout, exercisesDone,
-    theme, themeMode, toggleTheme
+    theme, themeMode, toggleTheme, coachInsight, todaysWater
   } = useApp();
 
   const [showModal, setShowModal] = useState(false);
@@ -99,6 +99,22 @@ export default function HomeScreen({ navigation }) {
           </View>
         </GlassCard>
 
+        {/* AI Coach Insight */}
+        <GlassCard theme={theme} style={styles.coachCard}>
+          <View style={styles.coachHeader}>
+            <View style={styles.coachIconBox}>
+              <MaterialCommunityIcons name="robot-happy" size={24} color={COLORS.primary} />
+            </View>
+            <View>
+              <Text style={[styles.coachTitle, { color: theme.text }]}>{coachInsight.title}</Text>
+              <Text style={[styles.coachSub, { color: theme.textSecondary }]}>AI PERSONAL COACH</Text>
+            </View>
+          </View>
+          <Text style={[styles.coachBody, { color: theme.text }]}>
+            "{coachInsight.body}"
+          </Text>
+        </GlassCard>
+
         {/* Quick Actions */}
         <View style={styles.actionRow}>
           <TouchableOpacity style={[styles.actionBtn, { borderColor: theme.glassBorder }]} onPress={() => setShowModal(true)}>
@@ -128,6 +144,25 @@ export default function HomeScreen({ navigation }) {
             <Text style={[styles.miniLabel, { color: theme.textSecondary }]}>Exercises</Text>
           </GlassCard>
         </View>
+
+        {/* Water Shortcut */}
+        <TouchableOpacity onPress={() => navigation.navigate('Progress', { screen: 'Water' })}>
+          <GlassCard theme={theme} style={styles.waterShortcut}>
+            <View style={styles.waterLeft}>
+               <View style={[styles.waterIcon, { backgroundColor: COLORS.primary + '15' }]}>
+                  <MaterialCommunityIcons name="water" size={24} color={COLORS.primary} />
+               </View>
+               <View>
+                  <Text style={[styles.waterTitle, { color: theme.text }]}>Hydration Status</Text>
+                  <Text style={[styles.waterSub, { color: theme.textMuted }]}>{todaysWater}ml / 3000ml Today</Text>
+               </View>
+            </View>
+            <View style={styles.waterRight}>
+               <Text style={[styles.waterPct, { color: COLORS.primary }]}>{Math.round((todaysWater / 3000) * 100)}%</Text>
+               <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
+            </View>
+          </GlassCard>
+        </TouchableOpacity>
 
         {/* Training Shortcut */}
         <TouchableOpacity onPress={() => navigation.navigate('Workout')}>
@@ -178,7 +213,7 @@ export default function HomeScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { padding: SPACING.md },
+  scroll: { padding: SPACING.md, paddingBottom: 120 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.lg, marginTop: SPACING.sm },
   headerRight: { flexDirection: 'row', gap: SPACING.sm },
   dateText: { fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase' },
@@ -219,6 +254,21 @@ const styles = StyleSheet.create({
   workoutInfo: { flex: 1 },
   workoutTitle: { fontSize: 16, fontWeight: '700' },
   workoutSub: { fontSize: 12, marginTop: 2 },
+  
+  waterShortcut: { padding: 0, flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.md, paddingVertical: 12, marginBottom: SPACING.lg },
+  waterLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  waterIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  waterTitle: { fontSize: 15, fontWeight: '700' },
+  waterSub: { fontSize: 12, marginTop: 2 },
+  waterRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  waterPct: { fontSize: 14, fontWeight: '800' },
+
+  coachCard: { borderLeftWidth: 4, borderLeftColor: COLORS.primary },
+  coachHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
+  coachIconBox: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(46, 204, 113, 0.1)', alignItems: 'center', justifyContent: 'center' },
+  coachTitle: { fontSize: 16, fontWeight: '800' },
+  coachSub: { fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
+  coachBody: { fontSize: 14, fontStyle: 'italic', lineHeight: 20, opacity: 0.9 },
 
   modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.xl },
   modalContent: { width: '100%', borderRadius: RADIUS.xl, padding: SPACING.xl, borderWidth: 1, alignItems: 'center' },

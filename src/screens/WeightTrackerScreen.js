@@ -25,7 +25,7 @@ function GlassCard({ children, style, theme }) {
   );
 }
 
-export default function WeightTrackerScreen() {
+export default function WeightTrackerScreen({ navigation }) {
   const { userProfile, weightHistory, weightGained, bmi, theme } = useApp();
 
   const labels = (weightHistory || []).slice(-7).map(e => format(parseISO(e.date), 'EEE'));
@@ -64,8 +64,22 @@ export default function WeightTrackerScreen() {
             <Text style={[styles.title, { color: theme.text }]}>Progress</Text>
             <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Analytics & Milestones</Text>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: COLORS.primary + '15' }]}>
-            <Text style={styles.statusText}>GAINING</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <TouchableOpacity 
+              style={[styles.galleryBtn, { borderColor: theme.glassBorder }]} 
+              onPress={() => navigation.navigate('WeeklyReport')}
+            >
+              <Ionicons name="bar-chart-outline" size={20} color={COLORS.accent} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.galleryBtn, { borderColor: theme.glassBorder }]} 
+              onPress={() => navigation.navigate('Gallery')}
+            >
+              <Ionicons name="images-outline" size={20} color={COLORS.primary} />
+            </TouchableOpacity>
+            <View style={[styles.statusBadge, { backgroundColor: COLORS.primary + '15' }]}>
+              <Text style={styles.statusText}>GAINING</Text>
+            </View>
           </View>
         </View>
 
@@ -160,6 +174,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 14, marginTop: 2 },
   statusBadge: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
   statusText: { fontSize: 10, fontWeight: '900', color: COLORS.primary, letterSpacing: 1 },
+  galleryBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)' },
 
   analysisRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.md },
   bmiCard: { flex: 1.2, padding: SPACING.md },

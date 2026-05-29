@@ -1,326 +1,218 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Modal, TextInput, Vibration, Dimensions, Animated,
+  TextInput, Vibration, Dimensions, Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
-import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
+import { format } from 'date-fns';
 
 const { width } = Dimensions.get('window');
 
-function GlassCard({ children, style, theme }) {
-  return (
-    <View style={[styles.glassCardWrapper, { borderColor: theme.glassBorder }, style]}>
-      <BlurView intensity={20} tint={theme.mode} style={styles.glassEffect}>
-        <View style={styles.glassContent}>
-          {children}
-        </View>
-      </BlurView>
-    </View>
-  );
-}
-
 export default function WorkoutScreen() {
-  const { todaysWorkout, toggleExerciseDone, logExerciseWeight, exercisePRs, theme, workoutLog } = useApp();
-  const [timerActive, setTimerActive] = useState(false);
-  const [seconds, setSeconds] = useState(60);
+  const { todaysWorkout, toggleExerciseDone, logExerciseWeight, theme, exercisePRs } = useApp();
   const [sessionSeconds, setSessionSeconds] = useState(0);
-  const timerRef = useRef(null);
   const sessionRef = useRef(null);
 
-  // Time and Date
-  const [currentTime, setCurrentTime] = useState(new Date());
-
   useEffect(() => {
-    const timeInterval = setInterval(() => setCurrentTime(new Date()), 1000);
     sessionRef.current = setInterval(() => setSessionSeconds(s => s + 1), 1000);
-    return () => {
-      clearInterval(timeInterval);
-      clearInterval(sessionRef.current);
-    };
+    return () => clearInterval(sessionRef.current);
   }, []);
-
-  useEffect(() => {
-    if (timerActive && seconds > 0) {
-      timerRef.current = setInterval(() => setSeconds(s => s - 1), 1000);
-    } else if (seconds === 0) {
-      Vibration.vibrate([0, 500, 200, 500]);
-      setTimerActive(false);
-      clearInterval(timerRef.current);
-    } else {
-      clearInterval(timerRef.current);
-    }
-    return () => clearInterval(timerRef.current);
-  }, [timerActive, seconds]);
-
-  const startTimer = (secs) => {
-    setSeconds(secs);
-    setTimerActive(true);
-  };
-
-  const formattedSessionTime = () => {
-    const mins = Math.floor(sessionSeconds / 60);
-    const secs = sessionSeconds % 60;
-    return `${mins}:${String(secs).padStart(2, '0')}`;
-  };
-
-  // Weekly Strip Logic
-  const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), i));
 
   if (!todaysWorkout) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-         <View style={styles.topBar}>
-          <View>
-            <Text style={[styles.topDate, { color: theme.textSecondary }]}>{format(currentTime, 'EEEE, MMM do')}</Text>
-            <Text style={[styles.topTime, { color: theme.text }]}>{format(currentTime, 'pp')}</Text>
-          </View>
-        </View>
-        
-        {/* Render Week Strip even on Rest Days */}
-        <View style={styles.weekStrip}>
-          {weekDays.map((day, i) => {
-            const isToday = isSameDay(day, new Date());
-            const hasWorkout = [1,2,3,4,5].includes(day.getDay());
-            return (
-              <View key={i} style={[styles.dayBox, isToday && { backgroundColor: COLORS.primary + '20', borderColor: COLORS.primary }]}>
-                <Text style={[styles.dayName, { color: isToday ? COLORS.primary : theme.textSecondary }]}>{format(day, 'EEE')}</Text>
-                <Text style={[styles.dayNum, { color: isToday ? theme.text : theme.textMuted }]}>{format(day, 'd')}</Text>
-                {hasWorkout && <View style={[styles.workoutDot, { backgroundColor: COLORS.primary }]} />}
-              </View>
-            );
-          })}
-        </View>
-
         <View style={styles.restDay}>
-          <MaterialCommunityIcons name="moon-waning-crescent" size={64} color={theme.textSecondary} />
-          <Text style={[styles.restTitle, { color: theme.text }]}>Rest & Grow Mode</Text>
-          <Text style={[styles.restSub, { color: theme.textSecondary }]}>No workout scheduled for today. Enjoy your recovery!</Text>
+          <MaterialCommunityIcons name="lightning-bolt" size={64} color="#00ffaa" />
+          <Text style={[styles.restTitle, { color: theme.text }]}>RECOVERY MODE</Text>
+          <Text style={[styles.restSub, { color: theme.textSecondary }]}>Your muscles are building right now. Stay hydrated and rest well.</Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  const progress = (todaysWorkout.exercises.filter(e => e.isDone).length / todaysWorkout.exercises.length) * 100;
+  const completedCount = todaysWorkout.exercises.filter(e => e.isDone).length;
+  const progress = (completedCount / todaysWorkout.exercises.length) * 100;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         
-        <View style={styles.topBar}>
-          <View>
-            <Text style={[styles.topDate, { color: theme.textSecondary }]}>{format(currentTime, 'EEEE, MMM do')}</Text>
-          </View>
-        </View>
-
-        {/* New Weekly Strip */}
-        <View style={styles.weekStrip}>
-          {weekDays.map((day, i) => {
-            const isToday = isSameDay(day, new Date());
-            const hasWorkout = [1,2,3,4,5].includes(day.getDay()); 
-            return (
-              <View key={i} style={[styles.dayBox, isToday && { backgroundColor: COLORS.primary + '20', borderColor: COLORS.primary }]}>
-                <Text style={[styles.dayName, { color: isToday ? COLORS.primary : theme.textSecondary }]}>{format(day, 'EEE')}</Text>
-                <Text style={[styles.dayNum, { color: isToday ? theme.text : theme.textMuted }]}>{format(day, 'd')}</Text>
-                {hasWorkout && <View style={[styles.workoutDot, { backgroundColor: COLORS.primary }]} />}
-              </View>
-            );
-          })}
-        </View>
-
-        <View style={styles.header}>
-          <View>
-            <Text style={[styles.title, { color: theme.text }]}>{todaysWorkout.splitType}</Text>
-            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>{todaysWorkout.focus}</Text>
-          </View>
-          <TouchableOpacity 
-            style={[styles.timerBtn, timerActive && styles.timerBtnActive, { borderColor: theme.glassBorder }]} 
-            onPress={() => setTimerActive(!timerActive)}
-          >
-            <Ionicons name="timer-outline" size={20} color={timerActive ? '#000' : COLORS.primary} />
-            <Text style={[styles.timerText, { color: timerActive ? '#000' : theme.text }]}>
-              {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.progressContainer}>
-          <View style={[styles.progressTrack, { backgroundColor: theme.border }]}>
-            <Animated.View style={[styles.progressFill, { width: `${progress}%` }]} />
-          </View>
-          <Text style={[styles.progressText, { color: theme.textSecondary }]}>{Math.round(progress)}% Session Done</Text>
-        </View>
-
-        {timerActive && (
-          <GlassCard theme={theme} style={styles.timerControls}>
-            <Text style={[styles.timerLabel, { color: theme.textSecondary }]}>REST DURATION</Text>
-            <View style={styles.timerQuickRow}>
-              {[45, 60, 90].map(s => (
-                <TouchableOpacity key={s} style={styles.quickTime} onPress={() => startTimer(s)}>
-                  <Text style={styles.quickTimeText}>{s}s</Text>
-                </TouchableOpacity>
-              ))}
-              <TouchableOpacity style={styles.timerStop} onPress={() => { setTimerActive(false); setSeconds(60); }}>
-                <Ionicons name="stop" size={16} color="#fff" />
-              </TouchableOpacity>
+        {/* Elite Terminal Header */}
+        <View style={[styles.terminalHeader, { backgroundColor: theme.glass, borderColor: theme.border }]}>
+            <View style={styles.terminalTop}>
+                <View>
+                    <Text style={[styles.terminalDate, { color: theme.mode === 'dark' ? '#00ffaa' : '#27ae60' }]}>{format(new Date(), 'EEEE • HH:mm')}</Text>
+                    <Text style={[styles.terminalTitle, { color: '#fff', fontSize: 26 }]}>{(todaysWorkout.splitType || 'DAILY SPLIT').toUpperCase()}</Text>
+                </View>
+                <View style={[styles.statusIndicator, { backgroundColor: theme.mode === 'dark' ? '#00ffaa' : '#2ecc71' }]}>
+                    <Text style={[styles.statusBadgeText, { color: '#000' }]}>{Math.round(progress)}% DONE</Text>
+                </View>
             </View>
-          </GlassCard>
-        )}
 
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Today's Routine</Text>
-        {todaysWorkout.exercises.map((exercise) => (
-          <AdvancedExerciseItem 
-            key={exercise.id} 
-            exercise={exercise} 
-            theme={theme} 
-            onToggle={() => {
-              toggleExerciseDone(exercise.id);
-              if (!exercise.isDone) startTimer(60); 
-            }}
-            onLogWeight={(w) => logExerciseWeight(exercise.id, w)}
-            pr={exercisePRs[exercise.id]}
-          />
-        ))}
+            <View style={styles.compactGrid}>
+                <View style={styles.gridCell}>
+                    <Ionicons name="flash" size={12} color={theme.mode === 'dark' ? '#00ffaa' : '#2ecc71'} />
+                    <Text style={[styles.cellVal, { color: '#fff' }]}>{todaysWorkout.intensity}</Text>
+                </View>
+                <View style={styles.gridCell}>
+                    <Ionicons name="flame" size={12} color="#ff6400" />
+                    <Text style={[styles.cellVal, { color: '#fff' }]}>~{todaysWorkout.exercises.length * 45} KC</Text>
+                </View>
+                <View style={styles.gridCell}>
+                    <Ionicons name="time" size={12} color={theme.mode === 'dark' ? '#00ffaa' : '#2ecc71'} />
+                    <Text style={[styles.cellVal, { color: '#fff' }]}>{todaysWorkout.duration || '60m'}</Text>
+                </View>
+            </View>
 
-        <View style={{ height: 120 }} />
+            <View style={[styles.microMetrics, { borderTopColor: theme.border }]}>
+                <Text style={styles.microText}><Text style={{ color: theme.mode === 'dark' ? '#00ffaa' : '#27ae60' }}>WATER:</Text> 500ML</Text>
+                <Text style={styles.microText}><Text style={{ color: theme.mode === 'dark' ? '#00ffaa' : '#27ae60' }}>REST:</Text> 60S</Text>
+                <Text style={styles.microText}><Text style={{ color: theme.mode === 'dark' ? '#00ffaa' : '#27ae60' }}>VOL:</Text> MAX</Text>
+            </View>
+
+            <View style={styles.focusBar}>
+               <Text style={[styles.focusText, { color: theme.mode === 'dark' ? '#00ffaa' : '#2ecc71' }]}>
+                  FOCUS: {todaysWorkout.focus.toUpperCase() || 'STRENGTH'}
+               </Text>
+            </View>
+        </View>
+
+        {/* Stacked Routine Cards */}
+        <View style={styles.routineStack}>
+            {todaysWorkout.exercises.map((exercise) => (
+                <EliteStackCard 
+                    key={exercise.id}
+                    exercise={exercise}
+                    theme={theme}
+                    onToggle={() => {
+                        toggleExerciseDone(exercise.id);
+                        Vibration.vibrate(50);
+                    }}
+                    onLog={(w) => logExerciseWeight(exercise.id, w)}
+                    pr={exercisePRs[exercise.id]}
+                />
+            ))}
+        </View>
+
+        <View style={{ height: 100 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function AdvancedExerciseItem({ exercise, theme, onToggle, onLogWeight, pr }) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [weightInput, setWeightInput] = useState(String(exercise.loggedWeight || ''));
+function EliteStackCard({ exercise, theme, onToggle, onLog, pr }) {
+    const [expanded, setExpanded] = useState(false);
+    const [weight, setWeight] = useState(String(exercise.loggedWeight || ''));
 
-  return (
-    <GlassCard theme={theme} style={[styles.exCard, exercise.isDone && styles.exCardDone]}>
-      <TouchableOpacity 
-        activeOpacity={0.8} 
-        onPress={() => setIsExpanded(!isExpanded)}
-        style={styles.exHeader}
-      >
-        <View style={styles.exLeft}>
-          <View style={styles.iconBox}>
-             <MaterialCommunityIcons 
-                name={exercise.name.toLowerCase().includes('press') ? 'weight-lifter' : 'arm-flex-outline'} 
-                size={22} 
-                color={exercise.isDone ? COLORS.primary : theme.textSecondary} 
-             />
-          </View>
-          <View>
-            <Text style={[styles.exName, { color: theme.text }, exercise.isDone && styles.exNameDone]}>{exercise.name}</Text>
-            <Text style={[styles.exMeta, { color: theme.textMuted }]}>{exercise.sets} Sets • {exercise.reps} Reps</Text>
-          </View>
-        </View>
-        <TouchableOpacity style={styles.checkBtn} onPress={onToggle}>
-          <Ionicons 
-            name={exercise.isDone ? "checkmark-done-circle" : "add-circle-outline"} 
-            size={32} 
-            color={exercise.isDone ? COLORS.primary : theme.textMuted} 
-          />
+    return (
+        <TouchableOpacity 
+            activeOpacity={0.9}
+            onPress={() => setExpanded(!expanded)}
+            style={[
+                styles.eliteStackCard, 
+                { backgroundColor: theme.glass, borderColor: exercise.isDone ? (theme.mode === 'dark' ? '#00ffaa' : '#2ecc71') : theme.border },
+                exercise.isDone && styles.eliteStackCardDone
+            ]}
+        >
+            <View style={styles.stackCardHeader}>
+                <View style={styles.stackCardMain}>
+                    <Text style={[styles.stackCardName, { color: theme.text }, exercise.isDone && styles.stackCardNameDone]}>{(exercise.name || 'EXERCISE').toUpperCase()}</Text>
+                    <View style={styles.stackCardMeta}>
+                        <Text style={[styles.stackCardSub, { color: theme.textSecondary }]}>{exercise.sets || 0} SETS • {exercise.reps || 0} REPS</Text>
+                        <View style={[styles.stackToolBadge, { backgroundColor: theme.mode === 'dark' ? '#111' : '#f0f0f0' }]}>
+                             <Text style={[styles.stackToolText, { color: theme.textMuted }]}>{(exercise.equipment || exercise.muscle || 'BODYWEIGHT').toUpperCase()}</Text>
+                        </View>
+                    </View>
+                </View>
+                
+                <TouchableOpacity style={[styles.checkNode, { backgroundColor: exercise.isDone ? (theme.mode === 'dark' ? '#00ffaa' : '#2ecc71') : 'rgba(255,255,255,0.05)' }]} onPress={onToggle}>
+                    {exercise.isDone && <Ionicons name="checkmark" size={16} color="#000" />}
+                </TouchableOpacity>
+            </View>
+
+            {expanded && (
+                <View style={styles.stackExpand}>
+                    <View style={[styles.stackDivider, { backgroundColor: theme.border }]} />
+                    <Text style={[styles.stackLabel, { color: theme.textMuted }]}>EXECUTION PROTOCOL</Text>
+                    <Text style={[styles.stackDesc, { color: theme.textSecondary }]}>{exercise.description}</Text>
+                    
+                    <View style={styles.stackLogRow}>
+                        <View style={styles.stackLogBox}>
+                            <Text style={[styles.stackLabel, { color: theme.textMuted }]}>SESSION LOAD (KG)</Text>
+                            <TextInput 
+                                style={[styles.stackInput, { color: theme.text }]}
+                                placeholder="00"
+                                placeholderTextColor={theme.textMuted}
+                                keyboardType="decimal-pad"
+                                value={weight}
+                                onChangeText={setWeight}
+                            />
+                        </View>
+                        <TouchableOpacity 
+                            style={[styles.stackActionBtn, { backgroundColor: theme.mode === 'dark' ? '#00ffaa' : '#2ecc71' }]}
+                            onPress={() => { onLog(weight); setExpanded(false); }}
+                        >
+                            <Text style={[styles.stackActionTxt, { color: theme.mode === 'dark' ? '#000' : '#fff' }]}>LOG SET</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
         </TouchableOpacity>
-      </TouchableOpacity>
-
-      {isExpanded && (
-        <View style={[styles.exDetails, { borderTopColor: theme.border }]}>
-          <View style={styles.instructionScroll}>
-            <Text style={[styles.detailTitle, { color: COLORS.primary }]}>MOVEMENT GUIDE</Text>
-            <Text style={[styles.exDesc, { color: theme.text }]}>{exercise.description}</Text>
-            <View style={[styles.stepBox, { backgroundColor: theme.glass }]}>
-              <Text style={[styles.stepText, { color: theme.text }]}>
-                <Text style={{ fontWeight: '800', color: COLORS.primary }}>COACH TIP:</Text> {exercise.tip}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.statsRow}>
-            <View style={styles.statChip}>
-              <Text style={styles.chipLabel}>PERSONAL BEST</Text>
-              <Text style={[styles.chipVal, { color: theme.text }]}>{pr ? `${pr.weight}kg` : '--'}</Text>
-            </View>
-            <View style={styles.statChip}>
-              <Text style={styles.chipLabel}>LOG WEIGHT</Text>
-              <TextInput
-                style={[styles.chipInput, { color: COLORS.primary }]}
-                placeholder="0.0"
-                placeholderTextColor={theme.textMuted}
-                keyboardType="decimal-pad"
-                value={weightInput}
-                onChangeText={setWeightInput}
-                onBlur={() => weightInput && onLogWeight(weightInput)}
-              />
-            </View>
-          </View>
-          <TouchableOpacity style={styles.saveBtn} onPress={() => onLogWeight(weightInput)}>
-            <Text style={styles.saveBtnText}>Save Log</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </GlassCard>
-  );
+    );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { padding: SPACING.md },
-  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.md },
-  topDate: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
-  topTime: { fontSize: 22, fontWeight: '900', marginTop: 2 },
-  sessionBox: { alignItems: 'flex-end' },
-  sessionLabel: { fontSize: 8, fontWeight: '800', color: COLORS.textMuted, letterSpacing: 1 },
-  sessionVal: { fontSize: 18, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  scroll: { padding: 20 },
+  
+  terminalHeader: { padding: 20, borderRadius: 25, borderWidth: 1.5, marginBottom: 25 },
+  terminalTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  terminalDate: { fontSize: 9, fontWeight: '900', letterSpacing: 1.5 },
+  terminalTitle: { fontWeight: '900', marginTop: 2, letterSpacing: -0.5 },
+  statusIndicator: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
+  statusBadgeText: { fontSize: 9, fontWeight: '900' },
 
-  weekStrip: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: SPACING.lg, paddingVertical: SPACING.sm },
-  dayBox: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: 'transparent' },
-  dayName: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
-  dayNum: { fontSize: 16, fontWeight: '900', marginTop: 2 },
-  workoutDot: { width: 4, height: 4, borderRadius: 2, marginTop: 4 },
+  compactGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
+  gridCell: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  cellVal: { fontSize: 14, fontWeight: '900' },
 
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.lg },
-  title: { fontSize: 24, fontWeight: '900' },
-  subtitle: { fontSize: 13, marginTop: 2 },
-  progressContainer: { marginBottom: SPACING.lg },
-  progressTrack: { height: 4, borderRadius: 2, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: COLORS.primary },
-  progressText: { fontSize: 10, fontWeight: '700', textAlign: 'right', marginTop: 6 },
-  timerBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.05)' },
-  timerBtnActive: { backgroundColor: COLORS.primary },
-  timerText: { fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  timerControls: { padding: SPACING.sm, marginBottom: SPACING.md, backgroundColor: 'rgba(46, 204, 113, 0.05)' },
-  timerLabel: { fontSize: 9, fontWeight: '800', textAlign: 'center', letterSpacing: 1, marginBottom: 8 },
-  timerQuickRow: { flexDirection: 'row', gap: 10, justifyContent: 'center' },
-  quickTime: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
-  quickTimeText: { color: COLORS.primary, fontWeight: '800', fontSize: 11 },
-  timerStop: { backgroundColor: COLORS.error, width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  sectionTitle: { fontSize: 16, fontWeight: '800', marginBottom: SPACING.md },
-  glassCardWrapper: { borderRadius: RADIUS.lg, overflow: 'hidden', borderWidth: 1, marginBottom: SPACING.sm },
-  glassEffect: { borderRadius: RADIUS.lg },
-  glassContent: { padding: 0 },
-  exCard: { marginBottom: SPACING.sm },
-  exCardDone: { borderColor: 'rgba(46, 204, 113, 0.3)' },
-  exHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: SPACING.md },
-  exLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  iconBox: { width: 40, height: 40, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  exName: { fontSize: 15, fontWeight: '700' },
-  exNameDone: { color: COLORS.textMuted, textDecorationLine: 'line-through' },
-  exMeta: { fontSize: 12, marginTop: 2 },
-  checkBtn: { padding: 4 },
-  exDetails: { padding: SPACING.md, borderTopWidth: 1 },
-  detailTitle: { fontSize: 10, fontWeight: '900', letterSpacing: 1, marginBottom: 8 },
-  exDesc: { fontSize: 14, lineHeight: 20, marginBottom: SPACING.md },
-  stepBox: { padding: 12, borderRadius: RADIUS.md, marginBottom: SPACING.lg },
-  stepText: { fontSize: 13, lineHeight: 18 },
-  statsRow: { flexDirection: 'row', gap: SPACING.md, marginBottom: SPACING.md },
-  statChip: { flex: 1, backgroundColor: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: RADIUS.md, alignItems: 'center' },
-  chipLabel: { fontSize: 8, fontWeight: '800', color: COLORS.textMuted, marginBottom: 4 },
-  chipVal: { fontSize: 16, fontWeight: '800' },
-  chipInput: { fontSize: 20, fontWeight: '900', textAlign: 'center', width: '100%' },
-  saveBtn: { backgroundColor: 'rgba(255,255,255,0.05)', padding: 12, borderRadius: RADIUS.md, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  saveBtnText: { color: COLORS.primary, fontWeight: '700', fontSize: 12 },
-  restDay: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: SPACING.xl },
-  restTitle: { fontSize: 24, fontWeight: '900', marginTop: SPACING.lg },
-  restSub: { fontSize: 15, textAlign: 'center', marginTop: 10, lineHeight: 22 },
+  microMetrics: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 12, borderTopWidth: 1, marginBottom: 10 },
+  microText: { fontSize: 10, fontWeight: '800', color: '#fff' },
+
+  focusBar: { paddingVertical: 5 },
+  focusText: { fontSize: 10, fontWeight: '900', letterSpacing: 1 },
+
+  routineStack: { gap: 15 },
+  eliteStackCard: { padding: 20, borderRadius: 25, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 5 },
+  eliteStackCardDone: { borderLeftWidth: 5 },
+  stackCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  stackCardMain: { flex: 1 },
+  stackCardName: { fontSize: 15, fontWeight: '900', letterSpacing: 0.5, marginBottom: 8 },
+  stackCardNameDone: { opacity: 0.3, textDecorationLine: 'line-through' },
+  stackCardMeta: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  stackCardSub: { fontSize: 11, fontWeight: '700' },
+  
+  stackToolBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  stackToolText: { fontSize: 8, fontWeight: '900' },
+  
+  checkNode: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  
+  stackExpand: { marginTop: 20 },
+  stackDivider: { height: 1, width: '100%', marginBottom: 15 },
+  stackLabel: { fontSize: 8, fontWeight: '900', letterSpacing: 1.5, marginBottom: 8 },
+  stackDesc: { fontSize: 13, lineHeight: 20, marginBottom: 25 },
+
+  stackLogRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 20 },
+  stackLogBox: { flex: 1 },
+  stackInput: { fontSize: 32, fontWeight: '900', padding: 0 },
+  stackActionBtn: { paddingHorizontal: 25, height: 44, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  stackActionTxt: { fontSize: 11, fontWeight: '900', letterSpacing: 1 },
+
+  restDay: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
+  restTitle: { fontSize: 26, fontWeight: '900', marginTop: 25, letterSpacing: 2 },
+  restSub: { fontSize: 15, textAlign: 'center', marginTop: 15, lineHeight: 24, opacity: 0.6 },
 });

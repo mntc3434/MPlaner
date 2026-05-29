@@ -9,6 +9,7 @@ const KEYS = {
   EXERCISE_PROGRESS: '@muscletrack:exercise_progress',
   SETTINGS: '@muscletrack:settings',
   INITIALIZED: '@muscletrack:initialized',
+  WATER_LOG: '@muscletrack:water_log',
 };
 
 export const storage = {

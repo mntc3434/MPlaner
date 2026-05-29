@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Modal, TextInput, KeyboardAvoidingView, Platform,
+  Modal, TextInput, KeyboardAvoidingView, Platform, Dimensions, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { PieChart } from 'react-native-chart-kit';
 import { useApp } from '../context/AppContext';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 
@@ -22,11 +23,21 @@ function GlassCard({ children, style, theme }) {
 }
 
 export default function MealPlanScreen() {
-  const { todaysMeals, userProfile, caloriesEaten, toggleMealEaten, addCustomMeal, theme } = useApp();
+  const { todaysMeals, userProfile, caloriesEaten, toggleMealEaten, deleteMeal, addCustomMeal, theme } = useApp();
   const [showAddModal, setShowAddModal] = useState(false);
   const [newMeal, setNewMeal] = useState({ name: '', calories: '', time: '12:00' });
 
   const calPercent = Math.min((caloriesEaten / userProfile.calorieTarget) * 100, 100);
+
+  const pieData = (todaysMeals || [])
+    .filter(m => m.isEaten)
+    .map((m, i) => ({
+      name: m.name,
+      population: m.calories,
+      color: [COLORS.primary, COLORS.accent, COLORS.warning, '#3498db', '#9b59b6'][i % 5],
+      legendFontColor: theme.textSecondary,
+      legendFontSize: 10,
+    }));
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -61,9 +72,41 @@ export default function MealPlanScreen() {
           </View>
         </GlassCard>
 
+        {pieData.length > 0 && (
+          <GlassCard theme={theme} style={styles.chartCard}>
+            <Text style={[styles.chartTitle, { color: theme.text }]}>Calorie Distribution</Text>
+            <PieChart
+              data={pieData}
+              width={Dimensions.get('window').width - 64}
+              height={180}
+              chartConfig={{
+                color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+              }}
+              accessor="population"
+              backgroundColor="transparent"
+              paddingLeft="15"
+              absolute
+            />
+          </GlassCard>
+        )}
+
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Daily Meals</Text>
         {(todaysMeals || []).map((meal) => (
-          <TouchableOpacity key={meal.id} activeOpacity={0.7} onPress={() => toggleMealEaten(meal.id)}>
+          <TouchableOpacity 
+            key={meal.id} 
+            activeOpacity={0.7} 
+            onPress={() => toggleMealEaten(meal.id)}
+            onLongPress={() => {
+              Alert.alert(
+                "Delete Meal",
+                `Are you sure you want to remove "${meal.name}"?`,
+                [
+                  { text: "Cancel", style: "cancel" },
+                  { text: "Delete", style: "destructive", onPress: () => deleteMeal(meal.id) }
+                ]
+              );
+            }}
+          >
             <GlassCard theme={theme} style={[styles.mealCard, meal.isEaten && styles.mealCardEaten]}>
               <View style={styles.mealMain}>
                 <View style={styles.mealLeft}>
@@ -106,7 +149,18 @@ export default function MealPlanScreen() {
                 <TouchableOpacity style={[styles.modalCancel, { backgroundColor: theme.glass }]} onPress={() => setShowAddModal(false)}>
                   <Text style={{ color: theme.textSecondary }}>Cancel</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.modalSave} onPress={() => { toggleMealEaten(null); setShowAddModal(false); }}>
+                <TouchableOpacity style={styles.modalSave} onPress={() => { 
+                  if (newMeal.name && newMeal.calories) {
+                    addCustomMeal({
+                      name: newMeal.name,
+                      calories: parseInt(newMeal.calories),
+                      time: newMeal.time,
+                      foods: [newMeal.name], // For simplicity, food list = name
+                    });
+                    setNewMeal({ name: '', calories: '', time: '12:00' });
+                    setShowAddModal(false); 
+                  }
+                }}>
                   <Text style={{ color: '#000', fontWeight: '800' }}>Add Meal</Text>
                 </TouchableOpacity>
               </View>
@@ -156,4 +210,6 @@ const styles = StyleSheet.create({
   modalButtons: { flexDirection: 'row', gap: SPACING.md },
   modalCancel: { flex: 1, padding: SPACING.md, alignItems: 'center', borderRadius: RADIUS.md },
   modalSave: { flex: 1, padding: SPACING.md, alignItems: 'center', borderRadius: RADIUS.md, backgroundColor: COLORS.primary },
+  chartCard: { padding: SPACING.md, alignItems: 'center' },
+  chartTitle: { fontSize: 14, fontWeight: '800', marginBottom: 10, alignSelf: 'flex-start' },
 });
