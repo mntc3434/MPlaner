@@ -1,4 +1,4 @@
-..export const USER_PROFILE = {
+.export const USER_PROFILE = {
   name: 'Champion',
   age: 22,
   height: 179,
