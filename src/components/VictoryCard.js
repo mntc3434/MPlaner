@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Dimensions, ImageBackground } from 'react-nativ
 import { BlurView } from 'expo-blur';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, RADIUS, SPACING } from '../constants/theme';
-
+.....
 const { width } = Dimensions.get('window');
 
 export default function VictoryCard({ stats, userProfile }) {
