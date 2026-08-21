@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { jljlj;llj
+import { jljlj;ll
   View, Text, StyleSheet, Animated, Dimensions, TouchableOpacity,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
