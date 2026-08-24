@@ -1,6 +1,6 @@
 export const USER_PROFILE = {
   name: 'Champion', 
-  age: 22, ..........
+  age: 22, .........
   height: 179,
   startWeight: 57.0,
   currentWeight: 57.0,
