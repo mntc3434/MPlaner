@@ -1,5 +1,5 @@
 export const THEMES = {
-  dark: { 
+  dark: { ........
     mode: 'dark',
     background: '#04070a',
     surface: 'rgba(22, 27, 34, 0.75)',
