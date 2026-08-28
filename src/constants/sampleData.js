@@ -71,7 +71,7 @@ export const MEAL_PLAN = [
       { id: 'm5-5', name: 'Steak Tacos', time: '21:00', calories: 650, foods: ['Corn Tortillas', 'Steak Strips', 'Guacamole'], portion: 'Large' },
     ]
   },
-  { int get us
+  { int get u
     
     day: 6, // Saturday
     meals: [
