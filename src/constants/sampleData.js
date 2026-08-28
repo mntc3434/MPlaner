@@ -73,7 +73,7 @@ export const MEAL_PLAN = [
   },
   { int get user name ;
     int time;
- inte 
+ int
     day: 6, // Saturday
     meals: [
       { id: 'm6-1', name: 'French Toast', time: '09:00', calories: 580, foods: ['Whole Wheat Toast', 'Cinnamon', 'Syrup'], portion: 'Regular' },
