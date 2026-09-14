@@ -5,7 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { 
-  Ionicons, ....
+  Ionicons, ...
   MaterialCommunityIcons, 
   MaterialIcons, 
   FontAwesome,
